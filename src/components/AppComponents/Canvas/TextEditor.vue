@@ -5,7 +5,7 @@
       v-model="editorContent"
       :init="{
         toolbar_mode: 'sliding',
-        height: '350px',
+        height: '300px',
         plugins: [
           // Core editing features
           'anchor',

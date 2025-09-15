@@ -24,10 +24,7 @@
                 There is no field to show
               </p>
             </div>
-            <!-- Editor data -->
-            <div v-if="formStore.editorData !== ''" class="flex mx-auto">
-              <div v-html="formStore.editorData"></div>
-            </div>
+
             <div v-for="field in fields" :key="field.id">
               <div
                 v-if="field.selected !== 'never'"
@@ -35,11 +32,24 @@
               >
                 <!-- label -->
                 <label
-                  v-if="field.label !== '' && field.type !== 'checkbox'"
+                  v-if="
+                    field.label !== '' &&
+                    field.type !== 'checkbox' &&
+                    field.type !== 'paragraph'
+                  "
                   :for="field.id"
                   class="text-lg font-semibold bg-sky-600 text-white py-1 px-3.5 rounded mr-2"
                   >{{ field.label }}
                 </label>
+                <!-- Editor data -->
+                <div
+                  v-if="
+                    formStore.editorData !== '' && field.type === 'paragraph'
+                  "
+                  class="flex w-2xl md:w-3xl justify-center ml-2"
+                >
+                  <div v-html="formStore.editorData"></div>
+                </div>
                 <!-- 1: Short Text -->
                 <template v-if="field.type === 'shorttext'">
                   <input
@@ -115,6 +125,7 @@
               Cancel
             </button>
             <button
+              @click="handleClose"
               class="border-2 border-sky-500 bg-sky-500 py-0.5 px-10 text-white font-semibold rounded cursor-pointer"
             >
               Save

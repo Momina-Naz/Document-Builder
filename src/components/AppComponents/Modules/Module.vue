@@ -34,7 +34,7 @@ import Plus from "vue-material-design-icons/Plus.vue";
 import { useModalsStore } from "@/stores/Modals";
 const store = useModalsStore();
 const modules = shallowRef([
-  { id: "1", type: "paraghraph", name: "Paragraph Text", icon: MenuIcon },
+  { id: "1", type: "paragraph", name: "Paragraph Text", icon: MenuIcon },
   { id: "2", type: "shorttext", name: "Short Text Field", icon: Rectangel },
   { id: "3", type: "largetext", name: "Large Text Field", icon: Square },
   { id: "4", type: "date", name: "Date of Birth", icon: Calender },

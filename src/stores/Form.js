@@ -21,9 +21,9 @@ export const useFormStore = defineStore("Form", {
         this.fields.push(this.currentField);
       }
 
-      console.log(this.fields);
+      console.log("all fields", this.fields);
 
-      console.log(this.currentField);
+      console.log("current field", this.currentField);
     },
   },
 });

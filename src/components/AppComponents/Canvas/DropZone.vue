@@ -1,88 +1,97 @@
 <template>
   <main class="flex flex-col justify-center items-center mx-auto w-full">
     <div
-      v-if="draggedModule.length === 0"
+      v-if="fields.length === 0"
       class="flex items-center gap-1 text-sky-500 text-lg italic"
     >
       Add Modules <plus />
     </div>
-    <draggable
-      class="w-full min-h-[100px]"
-      v-model="draggedModule"
-      :group="{ name: 'modules', pull: 'clone', put: true }"
-      @add="handleAdd"
-    >
-      <template #item="{ element: module }">
-        <component :is="getComponent(module.type)" />
-      </template>
-    </draggable>
 
-    <!-- Fields created by user -->
-    <div
-      v-if="store.currentField !== null"
-      class="grid grid-cols-1 mt-8 mx-0 md:mx-4 md:grid-cols-2 gap-x-5 gap-y-4 w-full bg-gray-100 p-4 border border-sky-500 border-dashed rounded-lg"
+    <draggable
+      class="w-full min-h-[649px]"
+      :list="fields"
+      :group="{ name: 'modules', pull: 'clone', put: true }"
+      @add="onFieldAdded"
     >
-      <div v-for="field in fields" :key="field.id">
-        <div
-          class="flex justify-between items-center bg-sky-500 border-2 border-sky-500 text-white rounded"
-        >
-          <p class="px-2">
-            {{ field.label || "Participant Settings" }}
-          </p>
+      <template #item="{ element: field }">
+        <div>
+          <!-- Paragraph Module -->
+          <div v-if="field.type === 'paragraph'">
+            <TextEditor v-model="field.content" />
+          </div>
+
+          <!-- Other Modules -->
           <div
-            @click="handleOpen(field.type, field.id)"
-            class="bg-white p-1 pl-2"
+            v-else
+            class="flex justify-between items-center bg-sky-500 border-2 border-sky-500 text-white rounded my-2 min-w-[318px] max-w-[600px]"
           >
-            <Edit class="text-gray-700" />
+            <p class="px-2">
+              {{ field.label }}
+            </p>
+
+            <div
+              @click="handleOpen(field.type, field.id)"
+              class="bg-white p-1 pl-2"
+            >
+              <Edit class="text-gray-700" />
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </draggable>
   </main>
 </template>
 
 <script setup>
+import draggable from "vuedraggable";
 import Plus from "vue-material-design-icons/Plus.vue";
 import Edit from "vue-material-design-icons/PencilOutline.vue";
-import draggable from "vuedraggable";
 import { useFormStore } from "@/stores/Form";
 import { useModalsStore } from "@/stores/Modals";
-import { ref } from "vue";
 import TextEditor from "./TextEditor.vue";
 
 const store = useFormStore();
 const modalStore = useModalsStore();
+
 const fields = store.fields;
-const draggedModule = ref([]);
 
-//  Prevent duplicates when field is dropped
-const handleAdd = (event) => {
-  const newItem = event.item.__draggable_context.element;
+// Handle when a new field is dragged from palette
+const onFieldAdded = (event) => {
+  // Remove auto-added item
+  fields.splice(event.newIndex, 1);
 
-  // Exclude the last pushed item when checking for duplicates
-  const existingWithoutNew = draggedModule.value.slice(0, -1);
-  const alreadyExists = existingWithoutNew.some((m) => m.type === newItem.type);
+  const rawField = event.item.__draggable_context.element;
+  const newField = {
+    ...rawField,
+    id: crypto.randomUUID(),
+    label: "",
+    placeholder: "",
+    content: "",
+  };
 
-  if (alreadyExists) {
-    // Remove only the just-added duplicate
-    draggedModule.value.pop();
-    console.log(`Duplicate "${newItem.type}" ignored`);
+  if (newField.type === "paragraph") {
+    // Prevent duplicate paragraphs
+    if (fields.some((f) => f.type === "paragraph")) {
+      console.warn("Paragraph already exists.");
+      return;
+    }
+
+    // Immediately add paragraph so <TextEditor /> renders
+    fields.splice(event.newIndex, 0, newField);
+    return;
   }
+
+  // For other field types, open modal and wait for attributes
+  modalStore.openModal(newField.type, newField.id, {
+    onSave: (attributes) => {
+      fields.splice(event.newIndex, 0, { ...newField, ...attributes });
+    },
+  });
 };
 
-//   render component if it's present
-const getComponent = (type) => {
-  switch (type) {
-    case "paraghraph":
-      return TextEditor;
-    default:
-      return null;
-  }
-};
-
+// open modal manually when editing
 const handleOpen = (fieldType, fieldId) => {
-  console.log("open module function called");
-  console.log(fieldType, fieldId);
   modalStore.openModal(fieldType, fieldId);
 };
 </script>
+
