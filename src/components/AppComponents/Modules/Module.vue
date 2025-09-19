@@ -31,6 +31,10 @@ import Checkbox from "vue-material-design-icons/CheckboxMarkedOutline.vue";
 import Rectangel from "vue-material-design-icons/RectangleOutline.vue";
 import Square from "vue-material-design-icons/SquareOutline.vue";
 import Plus from "vue-material-design-icons/Plus.vue";
+import List from "vue-material-design-icons/ListBoxOutline.vue";
+import Pencil from "vue-material-design-icons/PencilOutline.vue";
+import PageBreak from "vue-material-design-icons/PagePreviousOutline.vue";
+import Group from "vue-material-design-icons/DotsSquare.vue";
 import { useModalsStore } from "@/stores/Modals";
 const store = useModalsStore();
 const modules = shallowRef([
@@ -40,12 +44,18 @@ const modules = shallowRef([
   { id: "4", type: "date", name: "Date of Birth", icon: Calender },
   { id: "5", type: "email", name: "Email", icon: Mail },
   { id: "6", type: "checkbox", name: "Checkbox", icon: Checkbox },
+  { id: "7", type: "dropdown", name: "Dropdown List", icon: List },
+  { id: "8", type: "signature", name: "Signature", icon: Pencil },
+  { id: "9", type: "pagebreak", name: "Page Break", icon: PageBreak },
+  { id: "10", type: "group", name: "Group", icon: Group },
 ]);
 // handle drop
 
 const handleDrop = (event) => {
   const draggedModule = modules.value[event.oldIndex];
-  console.log(modules.value);
-  store.openModal(draggedModule.type, draggedModule.id);
+  const parentContext = store.parentContext;
+
+  const id = store.activeModule;
+  store.openModal(draggedModule.type, id, parentContext);
 };
 </script>

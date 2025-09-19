@@ -6,52 +6,24 @@ export const useModalsStore = defineStore("Modals", {
     activeModule: "",
     activeType: "",
     preview: false,
-
-    // NEW: callbacks for add/edit flow
-    onSaveCallback: null,
-    onCancelCallback: null,
+    parentContext: null,
   }),
   actions: {
     // open module's modal
-    openModal(moduleType, fieldId, callbacks = {}) {
+    openModal(moduleType, fieldId, parentContext) {
       this.activeType = moduleType;
       this.activeModule = fieldId;
       this.isOpen = true;
+      this.parentContext = parentContext;
 
-      // store optional callbacks (used when creating a field)
-      this.onSaveCallback = callbacks.onSave || null;
-      this.onCancelCallback = callbacks.onCancel || null;
+      console.log("parentContext", this.parentContext, this.activeModule);
     },
-
-    // called by modal when user clicks "Save"
-    saveAndClose(attributes) {
-      if (this.onSaveCallback) {
-        this.onSaveCallback(attributes);
-      }
-      this.resetModalState();
-    },
-
-    // called by modal when user clicks "Cancel"
-    cancelAndClose() {
-      if (this.onCancelCallback) {
-        this.onCancelCallback();
-      }
-      this.resetModalState();
-    },
-
-    // close module's modal manually (no callbacks)
+    // close module
     closeModule() {
-      this.resetModalState();
-      console.log("close module function called");
-    },
-
-    // reset modal state completely
-    resetModalState() {
       this.isOpen = false;
       this.activeModule = "";
       this.activeType = "";
-      this.onSaveCallback = null;
-      this.onCancelCallback = null;
+      this.parentContext = null;
     },
 
     // preview modal methods (unchanged)

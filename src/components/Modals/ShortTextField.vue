@@ -15,7 +15,7 @@
           <Close @click="handleClose" />
         </div>
         <!-- Body -->
-        <div class="flex flex-col gap-6 p-8 bg-white">
+        <div class="flex flex-col gap-4 p-8 bg-white">
           <!-- Field Id -->
           <div class="grid grid-cols-[120px_1fr] gap-2 mx-4">
             <p class="text-gray-900 font-semibold">Field ID:</p>
@@ -56,7 +56,7 @@
           <div class="grid grid-cols-[120px_1fr] gap-2 mx-4">
             <p class="text-gray-900 font-semibold">Show Field:</p>
             <select
-              v-model="formData.selected"
+              v-model="formData.option"
               class="bg-gray-100 py-0.5 px-2 outline-2 outline-gray-200 focus:outline-2 focus:outline-sky-500 w-1xl sm:w-2xl rounded-sm"
             >
               <option
@@ -66,6 +66,57 @@
                 :key="option.id"
               >
                 {{ option.text }}
+              </option>
+            </select>
+          </div>
+          <!-- Source (all checkbox fields) -->
+          <div class="grid grid-cols-[120px_1fr] gap-2 mx-4">
+            <p class="text-gray-900 font-semibold">Select Source:</p>
+            <select
+              v-model="formData.source"
+              class="bg-gray-100 py-0.5 px-2 outline-2 outline-gray-200 focus:outline-2 focus:outline-sky-500 w-1xl sm:w-2xl rounded-sm"
+            >
+              <option
+                class="bg-gray-100 rounded"
+                v-for="field in checkboxfields"
+                :value="field.label"
+                :key="field.id"
+              >
+                {{ field.label }}
+              </option>
+            </select>
+          </div>
+          <!-- Operator -->
+          <div class="grid grid-cols-[120px_1fr] gap-2 mx-4">
+            <p class="text-gray-900 font-semibold">Operator:</p>
+            <select
+              v-model="formData.operator"
+              class="bg-gray-100 py-0.5 px-2 outline-2 outline-gray-200 focus:outline-2 focus:outline-sky-500 w-1xl sm:w-2xl rounded-sm"
+            >
+              <option
+                class="bg-gray-100 rounded"
+                v-for="operator in operators"
+                :value="operator.value"
+                :key="operator.id"
+              >
+                {{ operator.text }}
+              </option>
+            </select>
+          </div>
+          <!-- Condition -->
+          <div class="grid grid-cols-[120px_1fr] gap-2 mx-4">
+            <p class="text-gray-900 font-semibold">Condition:</p>
+            <select
+              v-model="formData.condition"
+              class="bg-gray-100 py-0.5 px-2 outline-2 outline-gray-200 focus:outline-2 focus:outline-sky-500 w-1xl sm:w-2xl rounded-sm"
+            >
+              <option
+                class="bg-gray-100 rounded"
+                v-for="condition in conditions"
+                :value="condition.value"
+                :key="condition.id"
+              >
+                {{ condition.text }}
               </option>
             </select>
           </div>
@@ -112,6 +163,7 @@
     </div>
   </main>
 </template>
+
 <script setup>
 import { useModalsStore } from "@/stores/Modals";
 import { useFormStore } from "@/stores/Form";
@@ -120,13 +172,17 @@ import { watch } from "vue";
 import Close from "vue-material-design-icons/Close.vue";
 const store = useModalsStore();
 const formStore = useFormStore();
+const checkboxfields = formStore.checkboxFields;
 const formData = reactive({
   fieldId: null,
   label: "",
   placeholder: "",
   checked: false,
   fieldWidth: "",
-  selected: "",
+  option: "",
+  condition: "",
+  operator: "",
+  source: "",
 });
 const options = reactive([
   {
@@ -134,7 +190,23 @@ const options = reactive([
     text: "Always",
     value: "always",
   },
-  { id: "2", text: "Never", value: "never" },
+  { id: "2", text: "If", value: "if" },
+]);
+const conditions = reactive([
+  {
+    id: "1",
+    text: "Checked",
+    value: "checked",
+  },
+  { id: "2", text: "UnChecked", value: "unchecked" },
+]);
+const operators = reactive([
+  {
+    id: "1",
+    text: "Is",
+    value: "is",
+  },
+  { id: "2", text: "Is Not", value: "isnot" },
 ]);
 
 // close modal
@@ -152,10 +224,10 @@ const handleHalfwidth = () => {
   formData.fieldWidth = 40;
 };
 watch(
-  () => store.activeModule, // activeModule holds the field's internal id
+  () => store.activeModule, // activeModule has field's id
   (fieldId) => {
     if (!fieldId) {
-      // Reset for new field creation
+      // reset for new field creation
       formData.label = "";
       formData.placeholder = "";
       formData.checked = false;
@@ -165,10 +237,33 @@ watch(
       return;
     }
 
-    // Prefill formData for editing
-    const existingField = formStore.fields.find((f) => f.id === fieldId);
+    // access parent context from modal store
+    const parentContext = store.parentContext;
+    let existingField = null;
+
+    if (parentContext?.type === "group") {
+      // find the parent group in formStore.fields
+      const parentGroup = formStore.fields.find(
+        (f) => f.id === parentContext.parentId
+      );
+      if (parentGroup?.children) {
+        existingField = parentGroup.children.find((f) => f.id === fieldId);
+      }
+    } else {
+      // root level field
+      existingField = formStore.fields.find((f) => f.id === fieldId);
+    }
+
     if (existingField) {
       Object.assign(formData, existingField);
+    } else {
+      // if nothing found, reset (in case of new field)
+      formData.label = "";
+      formData.placeholder = "";
+      formData.checked = false;
+      formData.fieldWidth = "";
+      formData.selected = "";
+      formData.fieldId = "";
     }
   },
   { immediate: true }

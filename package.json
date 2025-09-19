@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@selemondev/vue3-signature-pad": "^1.4.2",
     "@tailwindcss/vite": "^4.1.12",
     "@tinymce/tinymce-vue": "^6.3.0",
     "pinia": "^3.0.3",

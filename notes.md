@@ -1,123 +1,77 @@
-modify event obj to solve the problem of duplication in canvas
-import { watch } from "vue";
-
 <template>
   <main class="flex flex-col justify-center items-center mx-auto w-full">
     <div
-      v-if="draggedModule.length === 0"
+      v-if="fields.length === 0"
       class="flex items-center gap-1 text-sky-500 text-lg italic"
     >
       Add Modules <plus />
     </div>
+
     <draggable
-      class="w-full min-h-[100px]"
-      v-model="draggedModule"
+      class="w-full min-h-[649px]"
+      :list="fields"
       :group="{ name: 'modules', pull: 'clone', put: true }"
-      @add="handleAdd"
+      @add="onFieldAdded"
     >
-      <template #item="{ element: module }">
-        <component :is="getComponent(module.type)" />
-      </template>
-    </draggable>
-
-    <!-- Fields created by user -->
-    <div
-      v-if="store.currentField !== null"
-      class="grid grid-cols-1 mt-8 mx-0 md:mx-4 md:grid-cols-2 gap-x-5 gap-y-4 w-full bg-gray-100 p-4 border border-sky-500 border-dashed rounded-lg"
-    >
-      <div v-for="field in fields" :key="field.id">
-        <div
-          class="flex justify-between items-center bg-sky-500 border-2 border-sky-500 text-white rounded"
-        >
-          <p class="px-2">
-            {{ field.label || "Participant Settings" }}
-          </p>
-          <div
-            @click="handleOpen(field.type, field.id)"
-            class="bg-white p-1 pl-2"
-          >
-            <Edit class="text-gray-700" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </main>
-</template>
-
-<script setup>
-import Plus from "vue-material-design-icons/Plus.vue";
-import Edit from "vue-material-design-icons/PencilOutline.vue";
-import draggable from "vuedraggable";
-import { useFormStore } from "@/stores/Form";
-import { useModalsStore } from "@/stores/Modals";
-import { ref } from "vue";
-import TextEditor from "./TextEditor.vue";
-
-const store = useFormStore();
-const modalStore = useModalsStore();
-const fields = store.fields;
-const draggedModule = ref([]);
-
-//  Prevent duplicates when field is dropped
-const handleAdd = (event) => {
-  const newItem = event.item.__draggable_context.element;
-
-  // Exclude the last pushed item when checking for duplicates
-  const existingWithoutNew = draggedModule.value.slice(0, -1);
-  const alreadyExists = existingWithoutNew.some((m) => m.type === newItem.type);
-
-  if (alreadyExists) {
-    // Remove only the just-added duplicate
-    draggedModule.value.pop();
-    console.log(`Duplicate "${newItem.type}" ignored`);
-  }
-};
-
-//   render component if it's present
-const getComponent = (type) => {
-  switch (type) {
-    case "paraghraph":
-      return TextEditor;
-    default:
-      return null;
-  }
-};
-
-const handleOpen = (fieldType, fieldId) => {
-  console.log("open module function called");
-  console.log(fieldType, fieldId);
-  modalStore.openModal(fieldType, fieldId);
-};
-</script>
-<template>
-  <main class="flex flex-col justify-center items-center mx-auto w-full">
-    <draggable
-      class="w-full bg-amber-100 min-h-screen"
-      v-model="canvasItems"
-      :group="{ name: 'modules', pull: 'clone', put: true }"
-    >
-      <template #item="{ element: item }">
+      <template #item="{ element: field }">
         <div>
-          <!-- Paragraph Text Module -->
-          <div v-if="item.name === 'Paragraph Text'">
-            <TextEditor />
+          <!-- Paragraph Module -->
+          <div v-if="field.type === 'paragraph'">
+            <TextEditor v-model="field.content" />
+          </div>
+          <!-- Page Break -->
+          <div v-if="field.type === 'pagebreak'">
+            <PageBreak />
+          </div>
+          <!-- Group -->
+
+          <div v-if="field.type === 'group'">
+            <Group />
           </div>
 
-          <!-- User Created Field -->
-          <div v-else-if="item.type === 'field'">
-            <div
-              class="flex justify-between items-center bg-sky-500 border-2 border-sky-500 text-white rounded"
-            >
-              <p class="px-2">
-                {{ item.label || "Participant Settings" }}
-              </p>
-              <div
-                @click="handleOpen(item.type, item.id)"
-                class="bg-white p-1 pl-2"
+          <!-- Select -->
+          <div
+            v-if="field.type === 'dropdown'"
+            class="flex justify-between items-center bg-sky-500 border-2 border-sky-500 text-white rounded my-2 min-w-[318px] max-w-[600px]"
+          >
+            <select class="w-full border-none focus:outline-none outline-none">
+              <option class="bg-sky-400">Select one</option>
+              <option
+                v-for="option in field.options"
+                :key="option.id"
+                :value="option"
+                class="bg-white text-sky-500 rounded"
               >
-                <Edit class="text-gray-700" />
-              </div>
+                {{ option }}
+              </option>
+            </select>
+
+            <div
+              @click="handleOpen(field.type, field.id)"
+              class="bg-white p-1 pl-2"
+            >
+              <Edit class="text-gray-700" />
+            </div>
+          </div>
+          <!-- Other Modules -->
+          <div
+            v-if="
+              field.type !== 'dropdown' &&
+              field.type !== 'pagebreak' &&
+              field.type !== 'group' &&
+              field.type !== 'paragraph'
+            "
+            class="flex justify-between items-center bg-sky-500 border-2 border-sky-500 text-white rounded my-2 min-w-[318px] max-w-[600px]"
+          >
+            <p class="px-2">
+              {{ field.label }}
+            </p>
+
+            <div
+              @click="handleOpen(field.type, field.id)"
+              class="bg-white p-1 pl-2"
+            >
+              <Edit class="text-gray-700" />
             </div>
           </div>
         </div>
@@ -129,30 +83,64 @@ const handleOpen = (fieldType, fieldId) => {
 
 <script setup>
 import draggable from "vuedraggable";
+import Plus from "vue-material-design-icons/Plus.vue";
 import Edit from "vue-material-design-icons/PencilOutline.vue";
 import { useFormStore } from "@/stores/Form";
-import { ref, watch } from "vue";
+import { useModalsStore } from "@/stores/Modals";
 import TextEditor from "./TextEditor.vue";
+import PageBreak from "@/components/Modals/PageBreak.vue";
+import Group from "@/components/Modals/Group.vue";
 
 const store = useFormStore();
+const modalStore = useModalsStore();
 
-// this array will hold everything that appears in the drop zone
-const canvasItems = ref([]);
+const fields = store.fields;
 
-// keep canvas items in sync with store.fields
-watch(
-  () => store.fields,
-  (newFields) => {
-    // remove old fields and add new ones so we don't duplicate
-    canvasItems.value = [
-      ...canvasItems.value.filter((item) => item.type !== "field"),
-      ...newFields.map((field) => ({
-        type: "field",
-        id: field.id,
-        label: field.label,
-      })),
-    ];
-  },
-  { immediate: true, deep: true }
-);
+// Handle when a new field is dragged from palette
+const onFieldAdded = (event) => {
+  // Remove auto-added item (because we control insertion manually)
+  fields.splice(event.newIndex, 1);
+
+  const rawField = event.item.__draggable_context.element;
+  const newField = {
+    ...rawField,
+    id: crypto.randomUUID(),
+    label: "",
+    placeholder: "",
+    content: "",
+  };
+
+  if (newField.type === "paragraph") {
+    // Prevent duplicate paragraphs
+    if (fields.some((f) => f.type === "paragraph")) {
+      console.warn("Paragraph already exists.");
+      return;
+    }
+
+    fields.splice(event.newIndex, 0, newField);
+    return;
+  }
+
+  if (newField.type === "pagebreak") {
+    //  Directly add page break to the fields array
+    fields.splice(event.newIndex, 0, newField);
+    return;
+  }
+  if (newField.type === "group") {
+    //  Directly add group to the fields array
+    fields.splice(event.newIndex, 0, newField);
+    return;
+  }
+  // For other field types → open modal and wait for attributes
+  modalStore.openModal(newField.type, newField.id, {
+    onSave: (attributes) => {
+      fields.splice(event.newIndex, 0, { ...newField, ...attributes });
+    },
+  });
+};
+
+// open modal manually when editing
+const handleOpen = (fieldType, fieldId) => {
+  modalStore.openModal(fieldType, fieldId);
+};
 </script>

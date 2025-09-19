@@ -147,23 +147,46 @@ const handleClose = async () => {
   await nextTick();
 };
 watch(
-  () => store.activeModule, // activeModule holds the field's internal id
+  () => store.activeModule, // activeModule has field's id
   (fieldId) => {
     if (!fieldId) {
-      // Reset for new field creation
+      // reset for new field creation
       formData.label = "";
       formData.placeholder = "";
       formData.checked = false;
-      formData.fieldWidth = "";
       formData.selected = "";
       formData.fieldId = "";
+      formData.maxDate = "";
       return;
     }
 
-    // Prefill formData for editing
-    const existingField = formStore.fields.find((f) => f.id === fieldId);
+    // access parent context from modal store
+    const parentContext = store.parentContext;
+    let existingField = null;
+
+    if (parentContext?.type === "group") {
+      // find the parent group in formStore.fields
+      const parentGroup = formStore.fields.find(
+        (f) => f.id === parentContext.parentId
+      );
+      if (parentGroup?.children) {
+        existingField = parentGroup.children.find((f) => f.id === fieldId);
+      }
+    } else {
+      // root level field
+      existingField = formStore.fields.find((f) => f.id === fieldId);
+    }
+
     if (existingField) {
       Object.assign(formData, existingField);
+    } else {
+      // if nothing found, reset (in case of new field)
+      formData.label = "";
+      formData.placeholder = "";
+      formData.checked = false;
+      formData.selected = "";
+      formData.fieldId = "";
+      formData.maxDate = "";
     }
   },
   { immediate: true }

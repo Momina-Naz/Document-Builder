@@ -11,7 +11,7 @@
         <div
           class="flex justify-between items-center bg-sky-600 py-4 px-4 text-white"
         >
-          <h1 class="font-serif text-lg font-bold">CHECKBOX FIELD</h1>
+          <h1 class="font-serif text-lg font-bold">SIGNATURE</h1>
           <Close @click="handleClose" />
         </div>
 
@@ -47,35 +47,6 @@
             />
           </div>
 
-          <!-- Show Field -->
-          <div class="grid grid-cols-[120px_1fr] gap-2 mx-4">
-            <p class="text-gray-900 font-semibold">Show Field:</p>
-            <select
-              v-model="formData.selected"
-              class="bg-gray-100 py-0.5 px-2 outline-2 outline-gray-200 focus:outline-2 focus:outline-sky-500 w-full sm:w-2xl rounded-sm"
-            >
-              <option
-                v-for="option in options"
-                :key="option.id"
-                :value="option.value"
-                class="bg-gray-100 rounded"
-              >
-                {{ option.text }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Field Size -->
-          <div class="grid grid-cols-[120px_1fr] gap-2 mx-4">
-            <p class="text-gray-900 font-semibold">Size:</p>
-            <input
-              v-model="formData.fieldWidth"
-              type="text"
-              placeholder="In pixels"
-              class="bg-gray-100 py-0.5 px-2 outline-2 outline-gray-200 focus:outline-2 focus:outline-sky-500 w-full sm:w-2xl rounded-sm"
-            />
-          </div>
-
           <!-- Actions -->
           <div class="flex gap-4 justify-center items-center mt-7">
             <button
@@ -106,43 +77,30 @@
 <script setup>
 import { useModalsStore } from "@/stores/Modals";
 import { useFormStore } from "@/stores/Form";
-import { nextTick, reactive, watch } from "vue";
+
+import { nextTick, reactive, ref } from "vue";
 import Close from "vue-material-design-icons/Close.vue";
+import { watch } from "vue";
 const store = useModalsStore();
 const formStore = useFormStore();
 const formData = reactive({
   fieldId: null,
   label: "",
-  placeholder: "",
   checked: false,
-  fieldWidth: "",
-  selected: "",
 });
-const options = reactive([
-  {
-    id: "1",
-    text: "Always",
-    value: "always",
-  },
-  { id: "2", text: "Never", value: "never" },
-]);
 
 // close modal
 const handleClose = async () => {
   store.closeModule();
   await nextTick();
 };
-
 watch(
   () => store.activeModule, // activeModule has field's id
   (fieldId) => {
     if (!fieldId) {
       // reset for new field creation
       formData.label = "";
-      formData.placeholder = "";
       formData.checked = false;
-      formData.fieldWidth = "";
-      formData.selected = "";
       formData.fieldId = "";
       return;
     }
@@ -169,15 +127,13 @@ watch(
     } else {
       // if nothing found, reset (in case of new field)
       formData.label = "";
-      formData.placeholder = "";
       formData.checked = false;
-      formData.fieldWidth = "";
-      formData.selected = "";
       formData.fieldId = "";
     }
   },
   { immediate: true }
 );
+
 // handle submit
 const handleSubmit = (formData) => {
   const id = crypto.randomUUID();
